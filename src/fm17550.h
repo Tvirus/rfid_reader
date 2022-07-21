@@ -408,11 +408,6 @@
 
 #define PCD_FIFO_SIZE  64
 
-#define PCD_MODE_HALT   0
-#define PCD_MODE_TYPEA  1
-#define PCD_MODE_TYPEB  2
-
-
 #define FM17550_I2C_DEV   "/dev/i2c-4"
 #define FM17550_I2C_ADDR  0x28
 
@@ -424,6 +419,9 @@ extern int pcd_init(void);
 extern int pcd_get_version(u8 *v);
 extern int pcd_soft_reset(void);
 extern int pcd_deinit(void);
+#define PCD_MODE_HALT   0
+#define PCD_MODE_TYPEA  1
+#define PCD_MODE_TYPEB  2
 extern int pcd_set_mode(int mode);
 extern int pcd_enable_crc(u8 en);
 extern int pcd_set_timer(u32 ms);

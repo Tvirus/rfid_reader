@@ -205,18 +205,21 @@ int pcd_set_mode(int mode)
         fm17550_write_reg(TxModeReg, TxCRCEn | TxSpeed_106K | TxFraming_14443B);
         fm17550_write_reg(RxModeReg, RxCRCEn | RxSpeed_106K | RxFraming_14443B);
         pcd_enable_crc(1);
-/*
+
+        //需要具体调整
         //fm17550_write_reg(RFCfgReg, RxGain_38db | RFLevel_0_17);
         fm17550_write_reg(GsNOnReg, ((0xF << CWGsNOn_SHIFT) & CWGsNOn_MASK) | (0x04 & ModGsNOn_MASK));
         fm17550_write_reg(CWGsPReg, 0x3F & CWGsP_MASK);
         //fm17550_write_reg(ModGsPReg, 0x20 & ModGsP_MASK);
         fm17550_write_reg(RxThresholdReg, ((0x08 << MinLevel_SHIFT) & MinLevel_MASK) | (0x04 & CollLevel_MASK));
-*/
+
         fm17550_set_bits(TxControlReg, Tx2RFEn | Tx1RFEn, Tx2RFEn | Tx1RFEn);
         usleep(100000);
     }
+    else
+        return -1;
 
-    return -1;
+    return 0;
 }
 
 int pcd_enable_crc(u8 en)

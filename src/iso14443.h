@@ -102,14 +102,14 @@ typedef struct {
 #define FSI_4096 0x0C
 #if __BYTE_ORDER__==__ORDER_BIG_ENDIAN__
 typedef struct {
-    u8 start;
+    u8 cmd;
 
     u8 fsdi:4;
     u8 cid:4; //如果PICC的CID是0，PICC会回应不包含CID的消息
 }RATS_t;
 #elif __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
 typedef struct {
-    u8 start;
+    u8 cmd;
 
     u8 cid:4;
     u8 fsdi:4;
@@ -364,7 +364,7 @@ typedef struct {
 
 #if __BYTE_ORDER__==__ORDER_BIG_ENDIAN__
 typedef struct {
-    u8 start;
+    u8 cmd;
     u8 pupi[4];
 
     //Application data
@@ -400,7 +400,7 @@ typedef struct {
 }ATQB_t;
 #elif __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
 typedef struct {
-    u8 start;
+    u8 cmd;
     u8 pupi[4];
 
     u8 afi;
@@ -443,7 +443,7 @@ typedef struct {
 #define ATTRIB_BITRATE_848K  3
 #if __BYTE_ORDER__==__ORDER_BIG_ENDIAN__
 typedef struct {
-    u8 start;
+    u8 cmd;
     u8 id[4];
 
     //Param1
@@ -469,7 +469,7 @@ typedef struct {
 }ATTRIB_t;
 #elif __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
 typedef struct {
-    u8 start;
+    u8 cmd;
     u8 id[4];
 
     //Param1

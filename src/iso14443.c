@@ -351,9 +351,9 @@ int typea_rats(card_info_t *info)
     info->spt_cid = 0;
     info->spt_nad = 0;
 
-    rats.start = RATS;
-    rats.fsdi  = get_fsi(PCD_FIFO_SIZE);
-    rats.cid   = info->cid;
+    rats.cmd  = RATS;
+    rats.fsdi = get_fsi(PCD_FIFO_SIZE);
+    rats.cid  = info->cid;
     DEBUG("  ==> RATS: %02x %02x", ((u8 *)&rats)[0], ((u8 *)&rats)[1]);
     len = pcd_send((u8 *)&rats, sizeof(rats) * 8, buf, sizeof(buf), 0, NULL);
     if ((0 >= len) || (len % 8))
@@ -475,7 +475,7 @@ int typeb_request(card_info_t *info, u8 wakeup, u8 app, u8 sub_app, ATQB_t *atqb
         return -1;
     }
     len /= 8;
-    if (0x50 != atqb->start)
+    if (0x50 != atqb->cmd)
     {
         ERROR("ATQB is not start with 0x50 !");
         return -1;
@@ -564,7 +564,7 @@ int typeb_attrib(card_info_t *info)
 
     pcd_set_timer(info->fwt);
 
-    attrib.start = 0x1D;
+    attrib.cmd = 0x1D;
     memcpy(attrib.id, info->pupi, 4);
     attrib.min_tr0 = 0;
     attrib.min_tr1 = 0;
