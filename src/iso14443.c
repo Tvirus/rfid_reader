@@ -196,7 +196,7 @@ static int typea_anticoll(u8 level, u8 *uid, u8 *valid_bits)
     uid[start] = (buf[0] & mask) | (uid[start] & ((u8)~mask));
     memcpy(&uid[start + 1], &buf[1], 3 - start);
 
-    DEBUG("<==   Anticoll: %02x %02x %02x %02x %02x, len:%u, mask:0x%02x, coll_pos:%u",
+    DEBUG("<==   Anticoll: %02x %02x %02x %02x %02x, len:%d, mask:0x%02x, coll_pos:%u",
            buf[0], buf[1], buf[2], buf[3], buf[4], len, mask, coll_pos);
 
     if (0 == coll_pos)
@@ -508,7 +508,7 @@ int typeb_request(card_info_t *info, u8 wakeup, u8 app, u8 sub_app, ATQB_t *atqb
         info->sfg = 0;
     if (iso14443_debug)
     {
-        printf("--TypeAB-- <==   ATQB(%u):", len);
+        printf("--TypeAB-- <==   ATQB(%d):", len);
         for (i = 0; i < len; i++)
             printf(" %02x", ((u8*)atqb)[i]);
         printf("\n");
@@ -700,8 +700,8 @@ int typeab_send(card_info_t *info, const u8 *send, u8 send_len, u8 *recv, u8 rec
 
         send_iblock->chaining = 1;
         memcpy(s + prologue_len, send, PCD_FIFO_SIZE - prologue_len);
-        DEBUG("  ==> I-BLOCK len(%u), prologue(%u): %02x %02x %02x", \
-               PCD_FIFO_SIZE, prologue_len, s[0], s[1], s[2]);
+        //DEBUG("  ==> I-BLOCK len(%u), prologue(%u): %02x %02x %02x", \
+               //PCD_FIFO_SIZE, prologue_len, s[0], s[1], s[2]);
         len = pcd_send(s, PCD_FIFO_SIZE * 8, r, sizeof(r), 0, NULL);
         send += PCD_FIFO_SIZE - prologue_len;
         send_len -= PCD_FIFO_SIZE - prologue_len;
@@ -752,8 +752,8 @@ int typeab_send(card_info_t *info, const u8 *send, u8 send_len, u8 *recv, u8 rec
             DEBUG("<==   R-BLOCK(1): %02x", r[0]);
     }
 
-    DEBUG("  ==> I-BLOCK len(%d), prologue(%u): %02x %02x %02x", \
-           prologue_len + send_len, prologue_len, s[0], s[1], s[2]);
+    //DEBUG("  ==> I-BLOCK len(%d), prologue(%u): %02x %02x %02x", \
+           //prologue_len + send_len, prologue_len, s[0], s[1], s[2]);
     len = pcd_send(s, (prologue_len + send_len) * 8, r, sizeof(r), 0, NULL);
     if ((0 >= len) || (len % 8))
     {
@@ -802,8 +802,8 @@ int typeab_send(card_info_t *info, const u8 *send, u8 send_len, u8 *recv, u8 rec
         }
         prologue_len++;
     }
-    DEBUG("<==   I-BLOCK len(%d), prologue(%u): %02x %02x %02x, (power_level:%u)", \
-           len, prologue_len, r[0], r[1], r[2], ((BLOCK_CID_t *)(&r[1]))->power_level);
+    //DEBUG("<==   I-BLOCK len(%d), prologue(%u): %02x %02x %02x, (power_level:%u)", \
+           //len, prologue_len, r[0], r[1], r[2], ((BLOCK_CID_t *)(&r[1]))->power_level);
 
     if (recv_len > (len - prologue_len))
         recv_len = len - prologue_len;

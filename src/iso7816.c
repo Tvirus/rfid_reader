@@ -23,7 +23,7 @@
 #define CMD_GET_RESPONSE_CLA   0x00
 #define CMD_GET_RESPONSE_INS   0xC0
 #define CMD_WRITE_BINARY_CLA   0x00
-#define CMD_WRITE_BINARY_INS   0xD0
+#define CMD_WRITE_BINARY_INS   0xD6
 #define CMD_WRITE_RECORD_CLA   0x00
 #define CMD_WRITE_RECORD_INS   0xD2
 #define CMD_UPDATE_BINARY_CLA  0x00
@@ -126,7 +126,7 @@ char* iso7816_strerror(const u8 *sw)
         else if (0x8A == sw[1]) return "DF name already exists";
     }
 
-    return "";
+    return "Unknown";
 }
 
 //level: 用于控制缩进
@@ -351,16 +351,16 @@ int find_simple_tlv_tag(u8 *tlv, u8 len, u8 tag, u8 **value)
     return -1;
 }
 
-int iso7816_select_id(card_info_t *info, const u8 *id, u8 *buf, int buf_len)
+int iso7816_select_id(card_info_t *info, u16 id, u8 *buf, int buf_len)
 {
     u8 send[sizeof(cmd_apdu_t) + 3];
-    u8 recv[100];
     cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[100];
     int len = 0;
     int i;
 
 
-    if ((NULL == info) || (NULL == id))
+    if (NULL == info)
         return -1;
 
     cmd->cla = CMD_SELECT_CLA;
@@ -368,10 +368,10 @@ int iso7816_select_id(card_info_t *info, const u8 *id, u8 *buf, int buf_len)
     cmd->p1  = 0;
     cmd->p2  = 0;
     cmd->data[0] = 2;
-    cmd->data[1] = id[0];
-    cmd->data[2] = id[1];
-    DEBUG("Select %02x %02x, cmd(7): %02x %02x %02x %02x  %02x %02x %02x",
-           id[0], id[1], send[0], send[1], send[2], send[3], send[4], send[5], send[6]);
+    cmd->data[1] = (id >> 8) & 0xFF;
+    cmd->data[2] = id & 0xFF;
+    DEBUG("Select %04x, cmd(7): %02x %02x %02x %02x %02x  %02x %02x",
+           id, send[0], send[1], send[2], send[3], send[4], send[5], send[6]);
     len = typeab_send(info, send, sizeof(send), recv, sizeof(recv));
     if (2 > len)
     {
@@ -385,13 +385,13 @@ int iso7816_select_id(card_info_t *info, const u8 *id, u8 *buf, int buf_len)
     }
     if ((OK_SW1 != recv[len - 2]) || (OK_SW2 != recv[len - 1]))
     {
-        ERROR("select id %02x %02x failed, %02X %02X: %s",
-               id[0], id[1], recv[len - 2], recv[len - 1], iso7816_strerror(&recv[len - 2]));
+        ERROR("select id %04x failed, %02X %02X: %s",
+               id, recv[len - 2], recv[len - 1], iso7816_strerror(&recv[len - 2]));
         return -1;
     }
     if (iso7816_debug)
     {
-        printf("--ISO7816-- Select OK(%u): ", len);
+        printf("--ISO7816-- Select OK(%d): ", len);
         for (i = 0; i < len; i++)
         {
             printf("%02x ", recv[i]);
@@ -419,8 +419,8 @@ int iso7816_select_id(card_info_t *info, const u8 *id, u8 *buf, int buf_len)
 int iso7816_get_challenge(card_info_t *info, u8 challenge_len, u8 *challenge)
 {
     u8 send[sizeof(cmd_apdu_t) + 1];
-    u8 recv[8 + 2];
     cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[8 + 2];
     int len = 0;
     int i;
 
@@ -465,8 +465,8 @@ int iso7816_get_challenge(card_info_t *info, u8 challenge_len, u8 *challenge)
 int iso7816_exter_authn(card_info_t *info, u8 key_id, const u8 *data)
 {
     u8 send[sizeof(cmd_apdu_t) + 1 + 8];
-    u8 recv[2];
     cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[2];
     int len = 0;
 
 
@@ -479,7 +479,7 @@ int iso7816_exter_authn(card_info_t *info, u8 key_id, const u8 *data)
     cmd->p2  = key_id;
     cmd->data[0] = 8;
     memcpy(&(cmd->data[1]), data, 8);
-    DEBUG("External authenticate, key:%u, cmd(13): %02x %02x %02x %02x  %02x %02x %02x %02x %02x %02x %02x %02x %02x", \
+    DEBUG("External authenticate, key:%u, cmd(13): %02x %02x %02x %02x %02x  %02x %02x %02x %02x %02x %02x %02x %02x", \
            key_id, send[0], send[1], send[2], send[3], send[4], send[5], send[6], \
                    send[7], send[8], send[9], send[10], send[11], send[12]);
     len = typeab_send(info, send, sizeof(send), recv, sizeof(recv));
@@ -502,8 +502,8 @@ int iso7816_exter_authn(card_info_t *info, u8 key_id, const u8 *data)
 int iso7816_inter_authn(card_info_t *info, u8 key_id, u8 algorithm, const u8 *data, u8 *result)
 {
     u8 send[sizeof(cmd_apdu_t) + 1 + 8];
-    u8 recv[8 + 2];
     cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[8 + 2];
     int len = 0;
 
 
@@ -516,7 +516,7 @@ int iso7816_inter_authn(card_info_t *info, u8 key_id, u8 algorithm, const u8 *da
     cmd->p2  = key_id;
     cmd->data[0] = 8;
     memcpy(&(cmd->data[1]), data, 8);
-    DEBUG("Internal authenticate, key:%u, cmd(13): %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x", \
+    DEBUG("Internal authenticate, key:%u, cmd(13): %02x %02x %02x %02x %02x  %02x %02x %02x %02x %02x %02x %02x %02x", \
            key_id, send[0], send[1], send[2], send[3], send[4], send[5], send[6], \
                    send[7], send[8], send[9], send[10], send[11], send[12]);
     len = typeab_send(info, send, sizeof(send), recv, sizeof(recv));
@@ -542,8 +542,8 @@ int iso7816_inter_authn(card_info_t *info, u8 key_id, u8 algorithm, const u8 *da
 int iso7816_read_binary(card_info_t *info, u16 offset, u8 len, u8 *buf)
 {
     u8 send[sizeof(cmd_apdu_t) + 1];
-    u8 recv[255];
     cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[255];
     int _len = 0;
     int i;
 
@@ -573,7 +573,7 @@ int iso7816_read_binary(card_info_t *info, u16 offset, u8 len, u8 *buf)
 
     if (iso7816_debug)
     {
-        printf("--ISO7816-- Read binary OK:");
+        printf("--ISO7816-- Read binary OK(%d):", _len);
         for (i = 0; i < _len; i++)
             printf(" %02x", recv[i]);
         printf("\n");
@@ -583,12 +583,168 @@ int iso7816_read_binary(card_info_t *info, u16 offset, u8 len, u8 *buf)
 }
 
 
-
-
-//**************************//
-//以下是复旦微fm1208相关函数
-//**************************//
-int fm1208_create_file(card_info_t *info)
+int iso7816_write_binary(card_info_t *info, u16 offset, u8 len, const u8 *buf)
 {
+    u8 send[64];
+    cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[2];
+    int _len = 0;
+    int i;
+
+
+    if ((NULL == info) || (NULL == buf) || (0 == len))
+        return -1;
+    if (sizeof(send) < (sizeof(cmd_apdu_t) + 1 + len))
+        return -1;
+
+    cmd->cla = CMD_WRITE_BINARY_CLA;
+    cmd->ins = CMD_WRITE_BINARY_INS;
+    cmd->p1  = (offset >> 8) & 0xFF;
+    cmd->p2  = offset & 0xFF;
+    cmd->data[0] = len;
+    memcpy(&cmd->data[1], buf, len);
+    if (iso7816_debug)
+    {
+        printf("--ISO7816-- Write binary, offset:%u len:%u, cmd(%u): %02x %02x %02x %02x %02x ", \
+                offset, len, sizeof(cmd_apdu_t) + 1 + len, send[0], send[1], send[2], send[3], send[4]);
+        for (i = 0; i < len; i++)
+            printf(" %02x", buf[i]);
+        printf("\n");
+    }
+    _len = typeab_send(info, send, sizeof(cmd_apdu_t) + 1 + len, recv, sizeof(recv));
+    if (2 != _len)
+    {
+        ERROR("write binary failed(%d) !", _len);
+        return -1;
+    }
+    if ((OK_SW1 != recv[0]) || (OK_SW2 != recv[1]))
+    {
+        ERROR("write binary failed(%d), %02X %02X: %s", \
+               _len, recv[0], recv[1], iso7816_strerror(recv));
+        return -1;
+    }
+
+    DEBUG("Write binary OK");
+    return 0;
+}
+
+
+
+
+//**************************//
+//以下是复旦微fmcos相关函数
+//**************************//
+int fmcos_erase(card_info_t *info)
+{
+    u8 send[sizeof(cmd_apdu_t) + 1];
+    cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[2];
+    int len = 0;
+
+
+    cmd->cla = 0x80;
+    cmd->ins = 0x0E;
+    cmd->p1  = 0;
+    cmd->p2  = 0;
+    cmd->data[0] = 0;
+    DEBUG("Erase DF");
+    len = typeab_send(info, send, sizeof(send), recv, sizeof(recv));
+    if (2 != len)
+    {
+        ERROR("erase df failed(%d) !", len);
+        return -1;
+    }
+    if ((OK_SW1 != recv[0]) || (OK_SW2 != recv[1]))
+    {
+        ERROR("erase df failed(%d), %02X %02X: %s", \
+               len, recv[0], recv[1], iso7816_strerror(recv));
+        return -1;
+    }
+    DEBUG("Erase DF OK");
+
+    return 0;
+}
+
+//wstatus_upper: 添加密钥的安全状态上限
+//wstatus_lower: 添加密钥的安全状态下限
+int fmcos_create_keyfile(card_info_t *info, u16 id, u16 filesize, u8 shortid, u8 wstatus_upper, u8 wstatus_lower)
+{
+    u8 send[sizeof(cmd_apdu_t) + 1 + 7];
+    cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[2];
+    int len = 0;
+
+
+    cmd->cla = 0x80;
+    cmd->ins = 0xE0;
+    cmd->p1  = (id >> 8) & 0xFF;
+    cmd->p2  = id & 0xFF;
+
+    cmd->data[0] = 7;
+    cmd->data[1] = 0x3F;
+    cmd->data[2] = (filesize >> 8) & 0xFF;
+    cmd->data[3] = filesize & 0xFF;
+    cmd->data[4] = shortid;
+    cmd->data[5] = ((wstatus_upper & 0x0F) << 4) | (wstatus_lower & 0x0F);
+    cmd->data[6] = 0xFF;
+    cmd->data[7] = 0xFF;
+    DEBUG("Create key file, size:%u id:%04x sid:%02x perms[%x,%x]", \
+           filesize, id, shortid, wstatus_upper, wstatus_lower);
+
+    len = typeab_send(info, send, sizeof(send), recv, sizeof(recv));
+    if (2 != len)
+    {
+        ERROR("create key file failed(%d) !", len);
+        return -1;
+    }
+    if ((OK_SW1 != recv[0]) || (OK_SW2 != recv[1]))
+    {
+        ERROR("create key file failed(%d), %02X %02X: %s", \
+               len, recv[0], recv[1], iso7816_strerror(recv));
+        return -1;
+    }
+    DEBUG("Create key file OK");
+
+    return 0;
+}
+
+int fmcos_create_binfile(card_info_t *info, u16 id, u16 filesize, u8 rstatus_upper, u8 rstatus_lower, u8 wstatus_upper, u8 wstatus_lower)
+{
+    u8 send[sizeof(cmd_apdu_t) + 1 + 7];
+    cmd_apdu_t *cmd = (cmd_apdu_t *)send;
+    u8 recv[2];
+    int len = 0;
+
+
+    cmd->cla = 0x80;
+    cmd->ins = 0xE0;
+    cmd->p1  = (id >> 8) & 0xFF;
+    cmd->p2  = id & 0xFF;
+
+    cmd->data[0] = 7;
+    cmd->data[1] = 0x28;
+    cmd->data[2] = (filesize >> 8) & 0xFF;
+    cmd->data[3] = filesize & 0xFF;
+    cmd->data[4] = ((rstatus_upper & 0x0F) << 4) | (rstatus_lower & 0x0F);
+    cmd->data[5] = ((wstatus_upper & 0x0F) << 4) | (wstatus_lower & 0x0F);
+    cmd->data[6] = 0xFF;
+    cmd->data[7] = 0xFF;
+    DEBUG("Create bin file, size:%u id:%04x rperms[%x,%x] wperms[%x,%x]", \
+           filesize, id, rstatus_upper, rstatus_lower, wstatus_upper, wstatus_lower);
+
+    len = typeab_send(info, send, sizeof(send), recv, sizeof(recv));
+    if (2 != len)
+    {
+        ERROR("create bin file failed(%d) !", len);
+        return -1;
+    }
+    if ((OK_SW1 != recv[0]) || (OK_SW2 != recv[1]))
+    {
+        ERROR("create bin file failed(%d), %02X %02X: %s", \
+               len, recv[0], recv[1], iso7816_strerror(recv));
+        return -1;
+    }
+    DEBUG("Create bin file OK");
+
     return 0;
 }
