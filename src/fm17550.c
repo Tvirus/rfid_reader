@@ -379,7 +379,7 @@ int pcd_send(u8 *send, u16 send_bits, u8 *recv, u8 recv_len, u8 recv_pos, u8 *co
         if (   (RxSpeed_106K == (rxmode & RxSpeed_MASK))
             && (ParityErr == (err & (CollErr | ParityErr))))
         {
-            ERROR("%s: 14443A 106k mode error reg 0x%02x !", __func__, err);
+            ERROR("%s: 14443A 106k mode parity error(0x%02x) !", __func__, err);
             rst = -1;
             goto EXIT;
         }

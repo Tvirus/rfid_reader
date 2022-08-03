@@ -627,7 +627,7 @@ int typeb_read_idcard_uid(card_info_t *info, u8 *uid)
     pcd_set_timer(info->fwt);
 
     DEBUG("  ==> read idcard uid: 00 36 00 00 08");
-    len = pcd_send((u8*)"\x02\x36\x00\x00\x08", 5 * 8, recv, sizeof(recv), 0, NULL);
+    len = pcd_send((u8*)"\x00\x36\x00\x00\x08", 5 * 8, recv, sizeof(recv), 0, NULL);
     if (80 != len)
     {
         ERROR("read idcard uid failed(%d) !", len);
