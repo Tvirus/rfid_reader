@@ -636,6 +636,7 @@ int typeb_read_idcard_uid(card_info_t *info, u8 *uid)
     DEBUG("<==   idcard uid: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x", \
            recv[0], recv[1], recv[2], recv[3], recv[4], recv[5], recv[6], recv[7], recv[8], recv[9]);
 
+    memcpy(uid, recv, 8);
     return 0;
 }
 
@@ -700,8 +701,8 @@ int typeab_send(card_info_t *info, const u8 *send, u8 send_len, u8 *recv, u8 rec
 
         send_iblock->chaining = 1;
         memcpy(s + prologue_len, send, PCD_FIFO_SIZE - prologue_len);
-        //DEBUG("  ==> I-BLOCK len(%u), prologue(%u): %02x %02x %02x", \
-               //PCD_FIFO_SIZE, prologue_len, s[0], s[1], s[2]);
+        /*DEBUG("  ==> I-BLOCK len(%u), prologue(%u): %02x %02x %02x", \
+                 PCD_FIFO_SIZE, prologue_len, s[0], s[1], s[2]);*/
         len = pcd_send(s, PCD_FIFO_SIZE * 8, r, sizeof(r), 0, NULL);
         send += PCD_FIFO_SIZE - prologue_len;
         send_len -= PCD_FIFO_SIZE - prologue_len;
@@ -752,8 +753,8 @@ int typeab_send(card_info_t *info, const u8 *send, u8 send_len, u8 *recv, u8 rec
             DEBUG("<==   R-BLOCK(1): %02x", r[0]);
     }
 
-    //DEBUG("  ==> I-BLOCK len(%d), prologue(%u): %02x %02x %02x", \
-           //prologue_len + send_len, prologue_len, s[0], s[1], s[2]);
+    /*DEBUG("  ==> I-BLOCK len(%d), prologue(%u): %02x %02x %02x", \
+             prologue_len + send_len, prologue_len, s[0], s[1], s[2]);*/
     len = pcd_send(s, (prologue_len + send_len) * 8, r, sizeof(r), 0, NULL);
     if ((0 >= len) || (len % 8))
     {
@@ -802,8 +803,8 @@ int typeab_send(card_info_t *info, const u8 *send, u8 send_len, u8 *recv, u8 rec
         }
         prologue_len++;
     }
-    //DEBUG("<==   I-BLOCK len(%d), prologue(%u): %02x %02x %02x, (power_level:%u)", \
-           //len, prologue_len, r[0], r[1], r[2], ((BLOCK_CID_t *)(&r[1]))->power_level);
+    /*DEBUG("<==   I-BLOCK len(%d), prologue(%u): %02x %02x %02x, (power_level:%u)", \
+             len, prologue_len, r[0], r[1], r[2], ((BLOCK_CID_t *)(&r[1]))->power_level);*/
 
     if (recv_len > (len - prologue_len))
         recv_len = len - prologue_len;
